@@ -2,26 +2,26 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:scanner3d/src/local/shared_preferences.dart';
 import 'package:scanner3d/src/model/file_data.dart';
 import 'package:scanner3d/src/presentation/pages/render_page.dart';
+import 'package:scanner3d/src/presentation/widgets/button_style.dart';
+import 'package:scanner3d/src/services/scan_provider.dart';
+import '../../../main.dart';
+import '../../services/notification_service.dart';
+import '../../services/socket_service.dart';
 
 class CurrentScanPage extends StatefulWidget {
-  const CurrentScanPage({Key? key}) : super(key: key);
+  const CurrentScanPage({super.key});
 
   @override
   State<CurrentScanPage> createState() => _CurrentScanPageState();
 }
 
 class _CurrentScanPageState extends State<CurrentScanPage> {
-  late int totalTime;
-  late int remainingTime;
-  bool isScanning = false;
-
   @override
   void initState() {
-    totalTime = 15;
-    remainingTime = totalTime;
     SharedPreferencesOperations()
         .getFileDataFromSharedPreferences()
         .then((fileDataList) {
@@ -29,98 +29,104 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
         savedObjects = fileDataList;
       });
     });
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildInfo(),
-            isScanning ? _buildCancelButton() : _buildScanButton(),
-          ],
+      body: SizedBox(
+        child: Consumer2<ScanProvider, SocketService>(
+          builder: (context, scanProvider, socketService, _) {
+            return socketService.isConnected && scanProvider.isScanning
+                ? _buildScanningScreen()
+                : _buildInfoScreen();
+          },
         ),
       ),
     );
   }
 
-  Widget _buildInfo() {
-    return isScanning
-        ? Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SizedBox(height: 150),
-              Container(
-                  margin: const EdgeInsets.all(15),
-                  child: const Text(
-                    "You are almost done! We are scanning your object.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20),
-                  )),
-              const SizedBox(height: 50),
-              CircularProgressIndicator(
-                value: (totalTime - remainingTime) / totalTime,
-                strokeWidth: 5.0,
-              ),
-              const SizedBox(height: 20),
-              Text("%${(totalTime - remainingTime) * 100 ~/ totalTime}"),
-              const SizedBox(height: 50),
-              Text("Estimated Time: ${totalTime ~/ 60}m ${totalTime % 60}s"),
-            ],
-          )
-        : Container(
+  Widget _buildInfoScreen() {
+    return Consumer2<ScanProvider, SocketService>(
+        builder: (context, scanProvider, socketService, _) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+          Container(
+            height: MediaQuery.of(context).size.height * 0.5,
             alignment: Alignment.center,
-            child: Text(
+            child: const Text(
               "Let's start a scanning in your 3D Object Scanner!",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20),
             ),
-          );
+          ),
+          ButtonStyles().button(
+            "Scan Now",
+            () {
+              scanProvider.onScanCompleted = receiveAndSaveFile;
+              socketService.isConnected
+                  ? scanProvider.startScan()
+                  : showCustomToast(context, "No hardware connection");
+            },
+            const Color.fromARGB(255, 36, 161, 157),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+        ],
+      );
+    });
   }
 
-  Widget _buildCancelButton() {
-    return Container(
-      margin: const EdgeInsets.all(32),
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 36, 161, 157),
-          foregroundColor: Colors.white,
-          fixedSize: const Size(double.infinity, 60),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        onPressed: () {
-          setState(() {
-            isScanning = false;
-            remainingTime = totalTime;
-          });
-        },
-        child: const Text("Cancel Scanning"),
-      ),
+  Widget _buildScanningScreen() {
+    return Consumer<ScanProvider>(
+      builder: (context, scanProvider, _) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+            Container(
+              margin: const EdgeInsets.all(15),
+              child: const Text(
+                "You are almost done! We are scanning your object.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20),
+              ),
+            ),
+            CircularProgressIndicator(
+              value: (scanProvider.totalTime - scanProvider.remainingTime) /
+                  scanProvider.totalTime,
+              strokeWidth: 5.0,
+            ),
+            Text(
+                "%${(scanProvider.totalTime - scanProvider.remainingTime) * 100 ~/ scanProvider.totalTime}"),
+            Text(
+                "Estimated Time: ${scanProvider.totalTime ~/ 60}m ${scanProvider.totalTime % 60}s"),
+            ButtonStyles().button(
+              "Cancel Scanning",
+              () {
+                scanProvider.cancelScan();
+              },
+              const Color.fromARGB(255, 193, 29, 29),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildScanButton() {
-    return Container(
-      margin: const EdgeInsets.all(32),
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 36, 161, 157),
-          foregroundColor: Colors.white,
-          fixedSize: const Size(double.infinity, 60),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+  void showCustomToast(BuildContext context, String message) {
+    final scaffold = ScaffoldMessenger.of(context);
+    scaffold.showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
         ),
-        onPressed: () {
-          isScanning = true;
-          setState(() {
-            receiveAndSaveFile();
-          });
-        },
-        child: const Text("Scan Now"),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color.fromARGB(255, 193, 29, 29),
       ),
     );
   }
@@ -132,22 +138,10 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
     // Bu kısmı gerçek bir socket bağlantısına ve veri alımına uygun olarak düzenlemeniz gerekebilir.
     // Alınan dosyayı 'savedObjects' klasörüne kaydet
     // delayedFunction(totalTime);
-    for (int i = 0; i < 2; i++) {
-      await Future.delayed(Duration(seconds: 1), () {
-        remainingTime--;
-      });
-      if (!isScanning) {
-        isScanning = false;
 
-        break;
-      }
-
-      setState(() {});
-    }
-
-    String fileName = "teapot.obj";
-    bool isSuccessful = true;
+    String fileName = "cesar.obj";
     int percentage = 100;
+    bool isSuccessful = percentage == 100;
 
     try {
       Directory appDocumentsDirectory =
@@ -167,6 +161,12 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
       SharedPreferencesOperations()
           .saveFileDataToSharedPreferences(savedObjects);
 
+      NotificationService.showBigTextNotification(
+          title: "Scanning completed successfully",
+          body: "Let's take a look at the scanned object",
+          fln: flutterLocalNotificationsPlugin);
+      // Call notification here
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -175,16 +175,7 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
         ),
       );
     } catch (e) {
-      /*ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error while saving file: $e"),
-          duration: const Duration(seconds: 2),
-          action: SnackBarAction(
-            label: 'Close',
-            onPressed: () {},
-          ),
-        ),
-      );*/
+      //
     }
   }
 }

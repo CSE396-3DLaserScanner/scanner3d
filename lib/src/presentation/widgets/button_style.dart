@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 class ButtonStyles {
-  static Widget button(String text, VoidCallback onPressed) {
+  Widget button(String text, VoidCallback onPressed, Color color) {
     return ElevatedButton(
-      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        fixedSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () {
+        onPressed();
+      },
       child: Text(
         text,
-        style: TextStyle(color: Colors.white),
+        style: const TextStyle(fontSize: 16),
       ),
-      style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 36, 161, 157)),
     );
   }
 }

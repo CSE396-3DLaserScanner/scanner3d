@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:scanner3d/src/presentation/icons/scanner_icons.dart';
 import 'package:scanner3d/src/presentation/pages/connection_page.dart';
@@ -6,10 +7,14 @@ import 'package:scanner3d/src/presentation/pages/current_scan_page.dart';
 import 'package:scanner3d/src/presentation/pages/scan_list_page.dart';
 import 'package:scanner3d/src/presentation/pages/splash_view_page.dart';
 import 'package:scanner3d/src/presentation/widgets/connection_status_app_bar.dart';
+import 'package:scanner3d/src/services/notification_service.dart';
 import 'package:scanner3d/src/services/scan_provider.dart';
 import 'package:scanner3d/src/services/socket_service.dart';
 
-void main() {
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+main() {
   runApp(
     MultiProvider(
       providers: [
@@ -52,6 +57,13 @@ class _MyHomePageState extends State<MyHomePage> {
     const CurrentScanPage(),
     const ScanListPage()
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.initialize(flutterLocalNotificationsPlugin);
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -64,6 +76,8 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: ConnectionStatusAppBar(),
       body: _pageOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
+        iconSize: 28,
+        useLegacyColorScheme: false,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.compare_arrows),

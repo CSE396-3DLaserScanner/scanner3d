@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cube/flutter_cube.dart';
+import 'package:scanner3d/src/presentation/widgets/button_style.dart';
 
 class RenderPage extends StatefulWidget {
   const RenderPage(
@@ -63,18 +64,15 @@ class _RenderPageState extends State<RenderPage> {
             ),
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              _resetCube();
-              setState(
-                () {
-                  _cubeKey =
-                      UniqueKey(); // Change the key to create a new Cube instance
-                },
-              );
-            },
-            child: const Text("Reset Position"),
-          ),
+          ButtonStyles().button("Reset Position", () {
+            _resetCube();
+            setState(
+              () {
+                _cubeKey =
+                    UniqueKey(); // Change the key to create a new Cube instance
+              },
+            );
+          }, const Color.fromARGB(255, 36, 161, 157))
         ],
       ),
     );

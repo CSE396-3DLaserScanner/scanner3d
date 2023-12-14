@@ -13,7 +13,7 @@ class ConnectionStatusAppBar extends StatelessWidget
       builder: (context, socketService, _) {
         return AppBar(
           backgroundColor: socketService.isConnected
-              ? const Color.fromARGB(255, 1, 160, 73)
+              ? const Color.fromARGB(255, 36, 161, 157)
               : const Color.fromARGB(255, 209, 40, 40),
           title: Text(
             socketService.isConnected ? "Connected" : "No connection",

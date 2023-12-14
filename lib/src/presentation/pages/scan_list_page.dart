@@ -73,29 +73,29 @@ class ObjectCard extends StatelessWidget {
       child: Container(
         color: Colors.white30,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Success Indicator Icon
-            Icon(
-              myObject.isSuccessful ? Icons.check_circle : Icons.cancel,
-              color: myObject.isSuccessful
-                  ? const Color.fromARGB(255, 36, 161, 157)
-                  : const Color.fromARGB(255, 193, 29, 29),
-            ),
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RenderPage(
-                        objectFileName: myObject.fileName,
-                        path: 'saved_objects/${myObject.fileName}',
-                      ),
-                    ),
-                  );
-                },
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RenderPage(
+                  objectFileName: myObject.fileName,
+                  path: 'saved_objects/${myObject.fileName}',
+                ),
+              ),
+            );
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Success Indicator Icon
+              Icon(
+                myObject.isSuccessful ? Icons.check_circle : Icons.cancel,
+                color: myObject.isSuccessful
+                    ? const Color.fromARGB(255, 36, 161, 157)
+                    : const Color.fromARGB(255, 193, 29, 29),
+              ),
+              Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
@@ -105,16 +105,17 @@ class ObjectCard extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            myObject.percentage < 100
-                ? Text("${myObject.percentage}%")
-                : const Text(""),
-            // Delete Button
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: onDelete,
-            ),
-          ],
+
+              myObject.percentage < 100
+                  ? Text("${myObject.percentage}%")
+                  : const Text(""),
+              // Delete Button
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ),
       ),
     );
