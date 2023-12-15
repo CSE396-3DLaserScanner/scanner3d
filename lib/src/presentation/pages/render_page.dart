@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_cube/flutter_cube.dart';
 import 'package:scanner3d/src/presentation/widgets/button_style.dart';
 
@@ -19,14 +20,19 @@ class _RenderPageState extends State<RenderPage> {
   late Vector3 _rotation;
   late double _far;
   late double _zoom;
+  late bool _backfaceCulling;
 
-  late Key _cubeKey; // Add this line
+  late Key _cubeKey;
+
+  late bool _isObjectValid;
 
   @override
   void initState() {
     super.initState();
     _resetCube();
-    _cubeKey = UniqueKey(); // Initialize a unique key
+    _cubeKey = UniqueKey();
+    _isObjectValid = false;
+    _checkObjectValidity();
   }
 
   void _resetCube() {
@@ -35,46 +41,66 @@ class _RenderPageState extends State<RenderPage> {
     _rotation = Vector3(90, -45, 180);
     _far = 1500;
     _zoom = 0.7;
+    _backfaceCulling = false;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.objectFileName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(widget.objectFileName), centerTitle: true),
       body: Column(
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.75,
-            child: Cube(
-              key: _cubeKey, // Use the key here
-              onSceneCreated: (Scene scene) {
-                scene.world.add(Object(
-                  fileName: widget.path,
-                  lighting: true,
-                  backfaceCulling: false,
-                  scale: _scale,
-                  position: _position,
-                  rotation: _rotation,
-                ));
-                scene.camera = Camera(far: _far, zoom: _zoom);
-              },
-            ),
+            child: _isObjectValid
+                ? Cube(
+                    key: _cubeKey,
+                    onSceneCreated: (Scene scene) {
+                      scene.world.add(Object(
+                        fileName: widget.path,
+                        lighting: true,
+                        backfaceCulling: _backfaceCulling,
+                        scale: _scale,
+                        position: _position,
+                        rotation: _rotation,
+                      ));
+                      scene.camera = Camera(far: _far, zoom: _zoom);
+                    },
+                  )
+                : Center(
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      "File '${widget.objectFileName}' could not found!",
+                      style: const TextStyle(
+                          color: Color.fromARGB(255, 193, 29, 29),
+                          fontSize: 20),
+                    ),
+                  ),
           ),
           const SizedBox(height: 20),
-          ButtonStyles().button("Reset Position", () {
-            _resetCube();
-            setState(
-              () {
-                _cubeKey =
-                    UniqueKey(); // Change the key to create a new Cube instance
-              },
-            );
-          }, const Color.fromARGB(255, 36, 161, 157))
+          _isObjectValid
+              ? ButtonStyles().button("Reset Position", () {
+                  _resetCube();
+                  setState(() {
+                    _cubeKey = UniqueKey();
+                  });
+                }, const Color.fromARGB(255, 36, 161, 157))
+              : const SizedBox(height: 0),
         ],
       ),
     );
+  }
+
+  Future<void> _checkObjectValidity() async {
+    try {
+      await rootBundle.load(widget.path);
+      setState(() {
+        _isObjectValid = true;
+      });
+    } catch (e) {
+      setState(() {
+        _isObjectValid = false;
+      });
+    }
   }
 }

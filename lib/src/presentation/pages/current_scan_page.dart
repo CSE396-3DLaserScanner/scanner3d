@@ -1,6 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:scanner3d/src/local/shared_preferences.dart';
@@ -20,6 +20,8 @@ class CurrentScanPage extends StatefulWidget {
 }
 
 class _CurrentScanPageState extends State<CurrentScanPage> {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     SharedPreferencesOperations()
@@ -29,13 +31,13 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
         savedObjects = fileDataList;
       });
     });
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       body: SizedBox(
         child: Consumer2<ScanProvider, SocketService>(
           builder: (context, scanProvider, socketService, _) {
@@ -99,18 +101,15 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
               value: (scanProvider.totalTime - scanProvider.remainingTime) /
                   scanProvider.totalTime,
               strokeWidth: 5.0,
+              color: const Color.fromARGB(255, 36, 161, 157),
             ),
             Text(
                 "%${(scanProvider.totalTime - scanProvider.remainingTime) * 100 ~/ scanProvider.totalTime}"),
             Text(
                 "Estimated Time: ${scanProvider.totalTime ~/ 60}m ${scanProvider.totalTime % 60}s"),
-            ButtonStyles().button(
-              "Cancel Scanning",
-              () {
-                scanProvider.cancelScan();
-              },
-              const Color.fromARGB(255, 193, 29, 29),
-            ),
+            ButtonStyles().button("Cancel Scanning", () {
+              scanProvider.cancelScan();
+            }, const Color.fromARGB(255, 193, 29, 29))
           ],
         );
       },
@@ -121,61 +120,150 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
     final scaffold = ScaffoldMessenger.of(context);
     scaffold.showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-        ),
-        duration: const Duration(seconds: 2),
-        backgroundColor: const Color.fromARGB(255, 193, 29, 29),
-      ),
+          content: Text(message, textAlign: TextAlign.center),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color.fromARGB(255, 193, 29, 29)),
     );
   }
 
   List<FileData> savedObjects = [];
 
   Future<void> receiveAndSaveFile() async {
-    // Socket üzerinden .obj dosyasını al ve yerel depolamaya kaydet
-    // Bu kısmı gerçek bir socket bağlantısına ve veri alımına uygun olarak düzenlemeniz gerekebilir.
-    // Alınan dosyayı 'savedObjects' klasörüne kaydet
-    // delayedFunction(totalTime);
+    TextEditingController fileNameController = TextEditingController();
+    GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-    String fileName = "cesar.obj";
+    String fileName = "new_scan.obj";
     int percentage = 100;
-    bool isSuccessful = percentage == 100;
+
+    NotificationService.showBigTextNotification(
+        title: "Scanning completed successfully",
+        body: "Let's take a look at the scanned object",
+        fln: flutterLocalNotificationsPlugin);
 
     try {
-      Directory appDocumentsDirectory =
-          await getApplicationDocumentsDirectory();
-      String savedObjectsPath = '${appDocumentsDirectory.path}/saved_objects';
-      await Directory(savedObjectsPath).create(recursive: true);
-
-      File file = File('$savedObjectsPath/$fileName');
-      await file.writeAsString('File Content'); // Save details of file here
-
-      savedObjects.add(FileData(
-        fileName: fileName,
-        isSuccessful: isSuccessful,
-        percentage: percentage,
-      ));
-
-      SharedPreferencesOperations()
-          .saveFileDataToSharedPreferences(savedObjects);
-
-      NotificationService.showBigTextNotification(
-          title: "Scanning completed successfully",
-          body: "Let's take a look at the scanned object",
-          fln: flutterLocalNotificationsPlugin);
-      // Call notification here
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => RenderPage(
-              objectFileName: fileName, path: 'saved_objects/$fileName'),
-        ),
-      );
+      await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.white,
+                title: const Text("Enter File Name"),
+                content: Form(
+                  key: formKey,
+                  child: TextFormField(
+                      cursorColor: const Color.fromARGB(255, 36, 161, 157),
+                      controller: fileNameController,
+                      decoration: InputDecoration(
+                        focusedBorder:
+                            getBorder(const Color.fromARGB(255, 36, 161, 157)),
+                        enabledBorder:
+                            getBorder(const Color.fromARGB(255, 65, 65, 65)),
+                        focusedErrorBorder:
+                            getBorder(const Color.fromARGB(255, 193, 29, 29)),
+                        errorBorder:
+                            getBorder(const Color.fromARGB(255, 193, 29, 29)),
+                        hintText: 'File Name',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a file name';
+                        }
+                        return null;
+                      }),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () async {
+                      saveAndNavigate(context, fileName, percentage);
+                    },
+                    child: const Text("Cancel",
+                        style:
+                            TextStyle(color: Color.fromARGB(255, 193, 29, 29))),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        fileName = "${fileNameController.text.trim()}.obj";
+                        saveAndNavigate(context, fileName, percentage);
+                      }
+                    },
+                    child: const Text("OK",
+                        style: TextStyle(
+                            color: Color.fromARGB(255, 36, 161, 157))),
+                  ),
+                ]);
+          });
     } catch (e) {
       //
     }
+  }
+
+  Future<void> saveAndNavigate(
+      BuildContext context, String fileName, int percentage) async {
+    bool isObjectValid = await _isObjectPathValid('saved_objects/$fileName');
+
+    if (isObjectValid) {
+      saveFile(fileName, percentage);
+    } else {
+      percentage = 1;
+      savedObjects.add(FileData(
+        fileName: fileName,
+        isSuccessful: false,
+        percentage: percentage,
+      ));
+      SharedPreferencesOperations()
+          .saveFileDataToSharedPreferences(savedObjects);
+    }
+
+    // ignore: use_build_context_synchronously
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RenderPage(
+          objectFileName: fileName,
+          path: 'saved_objects/$fileName',
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _isObjectPathValid(String path) async {
+    try {
+      await rootBundle.load(path);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> saveFile(
+    String fileName,
+    int percentage,
+  ) async {
+    Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
+    String savedObjectsPath = '${appDocumentsDirectory.path}/saved_objects';
+    await Directory(savedObjectsPath).create(recursive: true);
+
+    File file = File('$savedObjectsPath/$fileName');
+    await file.writeAsString('File Content');
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    savedObjects.add(FileData(
+      fileName: fileName,
+      isSuccessful: percentage == 100,
+      percentage: percentage,
+    ));
+
+    SharedPreferencesOperations().saveFileDataToSharedPreferences(savedObjects);
+  }
+
+  OutlineInputBorder getBorder(Color color) {
+    return OutlineInputBorder(
+      borderSide: BorderSide(
+        color: color,
+        width: 1.0,
+      ),
+    );
   }
 }

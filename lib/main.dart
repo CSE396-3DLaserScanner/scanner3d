@@ -16,30 +16,26 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ScanProvider()),
-        ChangeNotifierProvider(create: (_) => SocketService()),
-      ],
-      child: const MyApp(),
-    ),
+    MultiProvider(providers: [
+      ChangeNotifierProvider(create: (_) => ScanProvider()),
+      ChangeNotifierProvider(create: (_) => SocketService()),
+    ], child: const MyApp()),
   );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Scanner 3D',
-      theme: ThemeData(
-        primaryColor: const Color.fromARGB(255, 36, 161, 157),
-        disabledColor: const Color.fromARGB(255, 193, 29, 29),
-      ),
-      home: const SplashViewPage(),
-    );
+        title: 'Scanner 3D',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primaryColor: const Color.fromARGB(255, 36, 161, 157),
+          disabledColor: const Color.fromARGB(255, 193, 29, 29),
+        ),
+        home: const SplashViewPage());
   }
 }
 
@@ -73,29 +69,27 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ConnectionStatusAppBar(),
-      body: _pageOptions.elementAt(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        iconSize: 28,
-        useLegacyColorScheme: false,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.compare_arrows),
-            label: 'Connect',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Scanner.svg),
-            label: 'Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.view_list),
-            label: 'Your Scans',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 36, 161, 157),
-        onTap: _onItemTapped,
-      ),
-    );
+        appBar: const ConnectionStatusAppBar(),
+        body: _pageOptions.elementAt(_selectedIndex),
+        bottomNavigationBar: BottomNavigationBar(
+            iconSize: 28,
+            useLegacyColorScheme: false,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.compare_arrows),
+                label: 'Connect',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Scanner.svg),
+                label: 'Scan',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.view_list),
+                label: 'Your Scans',
+              )
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: const Color.fromARGB(255, 36, 161, 157),
+            onTap: _onItemTapped));
   }
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:scanner3d/main.dart';
-import 'package:scanner3d/src/presentation/pages/current_scan_page.dart';
-import 'package:scanner3d/src/presentation/pages/scan_list_page.dart';
 
 class SplashViewPage extends StatefulWidget {
   const SplashViewPage({super.key});
@@ -16,13 +14,12 @@ class _SplashViewPageState extends State<SplashViewPage> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage()
-            //CurrentScanPage(),
-            ),
-      );
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MyHomePage(),
+          ));
     });
   }
 
@@ -30,13 +27,12 @@ class _SplashViewPageState extends State<SplashViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Lottie.asset(
-          'assets/animations/animation_splash.json',
-          width: double.infinity,
-          height: 300,
-          fit: BoxFit.contain,
-        ),
-      ),
+          child: Lottie.asset(
+        'assets/animations/animation_splash.json',
+        width: double.infinity,
+        height: 300,
+        fit: BoxFit.contain,
+      )),
     );
   }
 }
