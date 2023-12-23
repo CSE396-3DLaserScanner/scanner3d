@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:scanner3d/src/presentation/widgets/button_style.dart';
-import 'package:scanner3d/src/services/socket_service.dart';
+import 'package:Scanner3D/src/presentation/widgets/button_style.dart';
+import 'package:Scanner3D/src/services/socket_service.dart';
 
 class ConnectionPage extends StatefulWidget {
   const ConnectionPage({super.key});
@@ -19,8 +19,9 @@ class _ConnectionPageState extends State<ConnectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(40.0),
         child: Consumer<SocketService>(
           builder: (context, socketService, _) {
             return socketService.isConnected
@@ -33,36 +34,34 @@ class _ConnectionPageState extends State<ConnectionPage> {
   }
 
   Widget _buildConnectScreen() {
-    return Form(
-      key: _formKey,
-      child: Center(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      children: [
+        Expanded(
+          flex: 10,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 100),
-              const Text(
+              Text(
                 "Connect to Device",
-                style: TextStyle(fontSize: 24, color: Colors.grey),
+                style: TextStyle(
+                    fontSize: 24, color: Theme.of(context).shadowColor),
               ),
-              SizedBox(
-                height: 120,
-                child: Column(children: [
-                  TextFormField(
-                    cursorColor: const Color.fromARGB(255, 36, 161, 157),
+              const SizedBox(height: 20),
+              Form(
+                key: _formKey,
+                child: TextFormField(
+                    cursorColor: Theme.of(context).primaryColor,
                     controller: _ipController,
                     decoration: InputDecoration(
                         focusedBorder:
-                            getBorder(const Color.fromARGB(255, 36, 161, 157)),
-                        enabledBorder:
-                            getBorder(const Color.fromARGB(255, 65, 65, 65)),
+                            getBorder(Theme.of(context).primaryColor),
+                        enabledBorder: getBorder(Theme.of(context).shadowColor),
                         focusedErrorBorder:
-                            getBorder(const Color.fromARGB(255, 193, 29, 29)),
-                        errorBorder:
-                            getBorder(const Color.fromARGB(255, 193, 29, 29)),
+                            getBorder(Theme.of(context).disabledColor),
+                        errorBorder: getBorder(Theme.of(context).disabledColor),
                         labelText: 'Enter Server IP',
-                        labelStyle: const TextStyle(
-                          color: Color.fromARGB(255, 65, 65, 65),
-                        ),
+                        labelStyle:
+                            TextStyle(color: Theme.of(context).shadowColor),
                         hintText: "127.0.0.1"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -72,54 +71,66 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         return 'Invalid IP address format';
                       }
                       return null;
-                    },
-                  ),
-                ]),
+                    }),
               ),
-              ButtonStyles().button(
-                "Connect",
-                () {
-                  if (_formKey.currentState!.validate()) {
-                    String ipAddress = _ipController.text;
-                    Provider.of<SocketService>(context, listen: false)
-                        .connectSocket(ipAddress);
-                  }
-                },
-                const Color.fromARGB(255, 36, 161, 157),
-              )
-            ]),
-      ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 0,
+          child: ButtonStyles().button(
+            "Connect",
+            () {
+              if (_formKey.currentState!.validate()) {
+                Provider.of<SocketService>(context, listen: false)
+                    .connectSocket(_ipController.text);
+              }
+            },
+            Theme.of(context).primaryColor,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildConnectionInfoScreen() {
-    return Center(
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 100),
-            SizedBox(
-              height: 80,
-              child: Column(children: [
-                const Text(
-                  "Hardware IP Address:",
-                  style: TextStyle(fontSize: 24, color: Colors.grey),
-                ),
-                const SizedBox(height: 10),
-                Consumer<SocketService>(builder: (context, socketService, _) {
-                  return Text(
-                    socketService.ipAddress,
-                    style: const TextStyle(fontSize: 20),
-                  );
-                })
-              ]),
-            ),
-            ButtonStyles().button("Disconnect", () {
+    return Column(
+      children: [
+        Expanded(
+          flex: 10,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Hardware IP Address:",
+                style: TextStyle(
+                    fontSize: 24, color: Theme.of(context).shadowColor),
+              ),
+              const SizedBox(height: 20),
+              Consumer<SocketService>(builder: (context, socketService, _) {
+                return Text(
+                  socketService.ipAddress,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                );
+              })
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 0,
+          child: ButtonStyles().button(
+            "Disconnect",
+            () {
               Provider.of<SocketService>(context, listen: false)
                   .disconnectSocket();
-            }, const Color.fromARGB(255, 193, 29, 29))
-          ]),
+            },
+            Theme.of(context).disabledColor,
+          ),
+        ),
+      ],
     );
   }
 

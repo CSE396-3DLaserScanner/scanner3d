@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:scanner3d/main.dart';
+import 'package:Scanner3D/main.dart';
 
 class SplashViewPage extends StatefulWidget {
   const SplashViewPage({super.key});
@@ -30,7 +30,7 @@ class _SplashViewPageState extends State<SplashViewPage> {
           child: Lottie.asset(
         'assets/animations/animation_splash.json',
         width: double.infinity,
-        height: 300,
+        height: 350,
         fit: BoxFit.contain,
       )),
     );

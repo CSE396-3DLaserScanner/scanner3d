@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:scanner3d/src/local/shared_preferences.dart';
-import 'package:scanner3d/src/model/file_data.dart';
-import 'package:scanner3d/src/presentation/pages/render_page.dart';
+import 'package:Scanner3D/src/local/database_helper.dart';
+import 'package:Scanner3D/src/model/file_data.dart';
+import 'package:Scanner3D/src/presentation/pages/render_page.dart';
 
 class ScanListPage extends StatefulWidget {
   const ScanListPage({super.key});
@@ -11,54 +11,60 @@ class ScanListPage extends StatefulWidget {
 }
 
 class _ScanListPageState extends State<ScanListPage> {
+  final DatabaseHelper dbHelper = DatabaseHelper.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Scans'),
+        title: Text(
+          'Your Scans',
+          style: TextStyle(color: Theme.of(context).highlightColor),
+        ),
         centerTitle: true,
         forceMaterialTransparency: true,
-        backgroundColor: Colors.white10,
+        backgroundColor: Theme.of(context).shadowColor,
       ),
       body: Center(
-          child: savedObjects.isNotEmpty
-              ? ListView.builder(
-                  itemCount: savedObjects.length,
-                  itemBuilder: (context, index) {
-                    return ObjectCard(
-                      myObject: savedObjects[index],
-                      onDelete: () {
-                        savedObjects.remove(savedObjects[index]);
-                        SharedPreferencesOperations()
-                            .saveFileDataToSharedPreferences(savedObjects);
-                        setState(() {});
-                      },
-                    );
-                  },
-                )
-              : const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    "No scanned object found!\nScan an object.",
-                    style: TextStyle(fontSize: 20, color: Colors.grey),
-                  ),
-                )),
+        child: FutureBuilder<List<FileData>>(
+          future: dbHelper.getFileDataList(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(40),
+                child: Text(
+                  "No scanned object found!\nScan an object.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 20, color: Theme.of(context).shadowColor),
+                ),
+              );
+            } else {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  return ObjectCard(
+                    myObject: snapshot.data![index],
+                    onDelete: () async {
+                      await dbHelper.deleteFileData(snapshot.data![index].id!);
+                      refreshData();
+                    },
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
     );
   }
 
-  List<FileData> savedObjects = [];
-
-  @override
-  void initState() {
-    SharedPreferencesOperations()
-        .getFileDataFromSharedPreferences()
-        .then((fileDataList) {
-      setState(() {
-        savedObjects = fileDataList;
-      });
-    });
-    super.initState();
+  void refreshData() {
+    setState(() {});
   }
 }
 
@@ -82,40 +88,43 @@ class ObjectCard extends StatelessWidget {
         child: GestureDetector(
           onTap: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RenderPage(
-                    objectFileName: myObject.fileName,
-                    path: 'saved_objects/${myObject.fileName}',
-                  ),
-                ));
-          },
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Icon(
-              myObject.isSuccessful ? Icons.check_circle : Icons.cancel,
-              color: myObject.isSuccessful
-                  ? const Color.fromARGB(255, 36, 161, 157)
-                  : const Color.fromARGB(255, 193, 29, 29),
-            ),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  myObject.fileName,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(fontSize: 16),
+              context,
+              MaterialPageRoute(
+                builder: (context) => RenderPage(
+                  objectFileName: myObject.fileName,
+                  path: 'saved_objects/${myObject.fileName}',
                 ),
               ),
-            ),
-            myObject.percentage < 100
-                ? Text("${myObject.percentage}%")
-                : const Text(""),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: onDelete,
-            )
-          ]),
+            );
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                myObject.isSuccessful ? Icons.check_circle : Icons.cancel,
+                color: myObject.isSuccessful
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).disabledColor,
+              ),
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    myObject.fileName,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              myObject.percentage < 100
+                  ? Text("${myObject.percentage}%")
+                  : const Text(""),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: onDelete,
+              )
+            ],
+          ),
         ),
       ),
     );

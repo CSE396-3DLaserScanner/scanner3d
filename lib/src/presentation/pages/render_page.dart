@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cube/flutter_cube.dart';
-import 'package:scanner3d/src/presentation/widgets/button_style.dart';
+import 'package:Scanner3D/src/presentation/widgets/button_style.dart';
 
 class RenderPage extends StatefulWidget {
   const RenderPage(
@@ -71,9 +71,8 @@ class _RenderPageState extends State<RenderPage> {
                     child: Text(
                       textAlign: TextAlign.center,
                       "File '${widget.objectFileName}' could not found!",
-                      style: const TextStyle(
-                          color: Color.fromARGB(255, 193, 29, 29),
-                          fontSize: 20),
+                      style: TextStyle(
+                          color: Theme.of(context).shadowColor, fontSize: 20),
                     ),
                   ),
           ),
@@ -84,7 +83,7 @@ class _RenderPageState extends State<RenderPage> {
                   setState(() {
                     _cubeKey = UniqueKey();
                   });
-                }, const Color.fromARGB(255, 36, 161, 157))
+                }, Theme.of(context).primaryColor)
               : const SizedBox(height: 0),
         ],
       ),

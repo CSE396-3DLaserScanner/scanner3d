@@ -12,7 +12,7 @@ class ScanProvider extends ChangeNotifier {
   late Timer _timer;
 
   void startScan() {
-    _totalTime = 12;
+    _totalTime = 2;
     _remainingTime = _totalTime;
     _isScanning = true;
     notifyListeners();

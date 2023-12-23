@@ -1,27 +1,32 @@
 class FileData {
-  final String fileName;
-  final bool isSuccessful;
-  final int percentage;
+  int? id;
+
+  String fileName;
+  bool isSuccessful;
+  int percentage;
 
   FileData({
+    this.id,
     required this.fileName,
     required this.isSuccessful,
     required this.percentage,
   });
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'fileName': fileName,
-      'isSuccessful': isSuccessful,
+      'isSuccessful': isSuccessful ? 1 : 0,
       'percentage': percentage,
     };
   }
 
-  factory FileData.fromJson(Map<String, dynamic> json) {
+  factory FileData.fromMap(Map<String, dynamic> map) {
     return FileData(
-      fileName: json['fileName'],
-      isSuccessful: json['isSuccessful'],
-      percentage: json['percentage'],
+      id: map['id'],
+      fileName: map['fileName'],
+      isSuccessful: map['isSuccessful'] == 1,
+      percentage: map['percentage'],
     );
   }
 }

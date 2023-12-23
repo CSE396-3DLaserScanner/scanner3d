@@ -18,4 +18,21 @@ class ButtonStyles {
       ),
     );
   }
+
+  Widget textButton(String text, VoidCallback onPressed, Color color) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        fixedSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () {
+        onPressed();
+      },
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 16),
+      ),
+    );
+  }
 }

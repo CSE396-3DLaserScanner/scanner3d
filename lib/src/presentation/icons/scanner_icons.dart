@@ -1,10 +1,3 @@
-// Place fonts/scanner.ttf in your fonts/ directory and
-// add the following to your pubspec.yaml
-// flutter:
-//   fonts:
-//    - family: scanner
-//      fonts:
-//       - asset: fonts/scanner.ttf
 import 'package:flutter/widgets.dart';
 
 class Scanner {
