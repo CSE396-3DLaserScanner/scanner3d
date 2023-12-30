@@ -26,16 +26,26 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
         child: Consumer2<ScanProvider, SocketService>(
           builder: (context, scanProvider, socketService, _) {
-            return socketService.isConnected && scanProvider.isScanning
-                ? _buildScanningScreen()
-                : _buildInfoScreen();
+            return socketService.isConnected
+                ? _buildConnected()
+                : _buildNotConnected();
           },
         ),
       ),
     );
   }
 
-  Widget _buildInfoScreen() {
+  Widget _buildConnected() {
+    return Consumer2<ScanProvider, SocketService>(
+      builder: (context, scanProvider, socketService, _) {
+        return scanProvider.status == HardwareStatus.idle
+            ? _buildStartScanScreen()
+            : _buildScanningScreen();
+      },
+    );
+  }
+
+  Widget _buildNotConnected() {
     return Consumer2<ScanProvider, SocketService>(
       builder: (context, scanProvider, socketService, _) {
         return Column(
@@ -58,9 +68,41 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
               child: ButtonStyles().button(
                 "Scan Now",
                 () {
-                  socketService.isConnected
-                      ? scanProvider.startScan()
-                      : showCustomToast(context, "No hardware connection");
+                  showCustomToast(context, "No hardware connection");
+                },
+                Theme.of(context).primaryColor,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStartScanScreen() {
+    return Consumer2<ScanProvider, SocketService>(
+      builder: (context, scanProvider, socketService, _) {
+        return Column(
+          children: [
+            Expanded(
+              flex: 10,
+              child: Center(
+                child: Text(
+                  "Let's start a scanning in your 3D Object Scanner!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Theme.of(context).highlightColor,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 0,
+              child: ButtonStyles().button(
+                "Scan Now",
+                () {
+                  socketService.startScanCommand();
 
                   scanProvider.onScanCompleted = () {
                     NotificationService.showBigTextNotification(
@@ -106,39 +148,26 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
                     ),
                     const SizedBox(height: 40),
                     CircularProgressIndicator(
-                      value: (scanProvider.totalTime -
-                              scanProvider.remainingTime) /
-                          scanProvider.totalTime,
-                      strokeWidth: 5.0,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(height: 10),
+                        strokeWidth: 5.0,
+                        color: Theme.of(context).primaryColor),
+                    const SizedBox(height: 20),
                     Text(
-                      "%${(scanProvider.totalTime - scanProvider.remainingTime) * 100 ~/ scanProvider.totalTime}",
-                      style: TextStyle(
-                          color: Theme.of(context).highlightColor,
-                          fontSize: 14),
-                    ),
-                    const SizedBox(height: 40),
-                    Text(
-                      "Estimated Time: ${scanProvider.totalTime ~/ 60}m ${scanProvider.totalTime % 60}s",
-                      style: TextStyle(
-                          color: Theme.of(context).highlightColor,
-                          fontSize: 14),
-                    ),
+                        "%${(SocketService.instance.currentRound / SocketService.instance.totalRound) * 100}"),
                   ],
                 ),
               ),
             ),
-            Expanded(
-                flex: 0,
-                child: ButtonStyles().button(
-                  "Cancel Scanning",
-                  () {
-                    scanProvider.cancelScan();
-                  },
-                  Theme.of(context).disabledColor,
-                )),
+            (scanProvider.status == HardwareStatus.scanning)
+                ? Expanded(
+                    flex: 0,
+                    child: ButtonStyles().button(
+                      "Cancel Scanning",
+                      () {
+                        SocketService.instance.cancelScanCommand();
+                      },
+                      Theme.of(context).disabledColor,
+                    ))
+                : const SizedBox(height: 0),
           ],
         );
       },

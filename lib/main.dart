@@ -20,8 +20,8 @@ void main() async {
 
   runApp(
     MultiProvider(providers: [
-      ChangeNotifierProvider(create: (_) => ScanProvider()),
-      ChangeNotifierProvider(create: (_) => SocketService()),
+      ChangeNotifierProvider(create: (_) => ScanProvider.instance),
+      ChangeNotifierProvider(create: (_) => SocketService.instance),
     ], child: const MyApp()),
   );
 

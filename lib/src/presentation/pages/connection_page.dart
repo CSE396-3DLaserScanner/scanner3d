@@ -21,7 +21,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
     return Scaffold(
       body: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(40.0),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
         child: Consumer<SocketService>(
           builder: (context, socketService, _) {
             return socketService.isConnected
@@ -31,6 +31,12 @@ class _ConnectionPageState extends State<ConnectionPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    super.dispose();
   }
 
   Widget _buildConnectScreen() {
@@ -82,8 +88,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
             "Connect",
             () {
               if (_formKey.currentState!.validate()) {
-                Provider.of<SocketService>(context, listen: false)
-                    .connectSocket(_ipController.text);
+                SocketService.instance.connectSocket(_ipController.text);
               }
             },
             Theme.of(context).primaryColor,
@@ -125,7 +130,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
             "Disconnect",
             () {
               Provider.of<SocketService>(context, listen: false)
-                  .disconnectSocket();
+                  .disconnectSockets();
             },
             Theme.of(context).disabledColor,
           ),
