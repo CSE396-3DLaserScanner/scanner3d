@@ -129,8 +129,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
           child: ButtonStyles().button(
             "Disconnect",
             () {
-              Provider.of<SocketService>(context, listen: false)
-                  .disconnectSockets();
+              SocketService.instance.disconnectSockets();
             },
             Theme.of(context).disabledColor,
           ),

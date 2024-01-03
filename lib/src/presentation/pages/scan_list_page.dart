@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:Scanner3D/main.dart';
 import 'package:flutter/material.dart';
 import 'package:Scanner3D/src/local/database_helper.dart';
 import 'package:Scanner3D/src/model/file_data.dart';
@@ -51,6 +54,8 @@ class _ScanListPageState extends State<ScanListPage> {
                     myObject: snapshot.data![index],
                     onDelete: () async {
                       await dbHelper.deleteFileData(snapshot.data![index].id!);
+                      await deleteFile(snapshot.data![index].filePath,
+                          snapshot.data![index].filePath);
                       refreshData();
                     },
                   );
@@ -65,6 +70,36 @@ class _ScanListPageState extends State<ScanListPage> {
 
   void refreshData() {
     setState(() {});
+  }
+
+  Future<void> deleteFile(String filePath, String fileName) async {
+    try {
+      File file = File(filePath);
+
+      // Dosya var mı kontrol et
+      if (await file.exists()) {
+        await file.delete();
+        showCustomToast(
+            navigatorKey.currentContext!, 'File deleted: $fileName');
+      } else {
+        showCustomToast(
+            navigatorKey.currentContext!, 'File not found: $filePath');
+      }
+    } catch (e) {
+      showCustomToast(navigatorKey.currentContext!,
+          'An error occurred while deleting the file: $e');
+    }
+  }
+
+  void showCustomToast(BuildContext context, String message) {
+    final scaffold = ScaffoldMessenger.of(context);
+    scaffold.showSnackBar(
+      SnackBar(
+        content: Text(message, textAlign: TextAlign.center),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Theme.of(context).disabledColor,
+      ),
+    );
   }
 }
 
@@ -92,7 +127,7 @@ class ObjectCard extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => RenderPage(
                   objectFileName: myObject.fileName,
-                  path: 'saved_objects/${myObject.fileName}',
+                  path: myObject.filePath,
                 ),
               ),
             );

@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:Scanner3D/src/services/socket_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:Scanner3D/main.dart';
 import 'package:Scanner3D/src/local/database_helper.dart';
 import 'package:Scanner3D/src/model/file_data.dart';
 import 'package:Scanner3D/src/presentation/pages/render_page.dart';
 import 'package:Scanner3D/src/presentation/widgets/button_style.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class ReceiveScannedObjectPage extends StatefulWidget {
@@ -26,11 +26,6 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
-  void initState() async {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Colors.white,
@@ -38,9 +33,7 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
           padding: const EdgeInsets.all(50),
           alignment: Alignment.center,
           child: Consumer<SocketService>(builder: (context, socketService, _) {
-            return socketService.isReceived
-                ? _buildFileNameInput()
-                : const CircularProgressIndicator();
+            return _buildFileNameInput();
           }),
         ));
   }
@@ -100,18 +93,29 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
   }
 
   Future<void> saveAndNavigate(String fileName, int percentage) async {
-    bool isObjectValid = await _isObjectPathValid(fileName);
+    String filePath = await _createFile(fileName);
+    bool isWritten = false;
+
+    if (SocketService.instance.receivedFileSize ==
+        SocketService.instance.stringBuffer.length) {
+      isWritten = await _writeObjToFile(
+          SocketService.instance.stringBuffer.toString(), filePath);
+    }
+    SocketService.instance.stringBuffer.clear();
+    bool isObjectValid = isWritten ? await _isObjectPathValid(filePath) : false;
 
     if (isObjectValid) {
       await dbHelper.insertFileData(FileData(
         fileName: fileName,
+        filePath: filePath,
         isSuccessful: percentage == 100,
         percentage: percentage,
       ));
     } else {
-      percentage = 1;
+      percentage = 0;
       await dbHelper.insertFileData(FileData(
         fileName: fileName,
+        filePath: filePath,
         isSuccessful: percentage == 100,
         percentage: percentage,
       ));
@@ -122,15 +126,44 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
       MaterialPageRoute(
         builder: (context) => RenderPage(
           objectFileName: fileName,
-          path: 'received_files/$fileName',
+          path: filePath,
         ),
       ),
     );
   }
 
-  Future<bool> _isObjectPathValid(String fileName) async {
-    String filePath =
-        "/data/user/0/com.example.scanner3d/app_flutter/received_files/$fileName";
+  Future<String> _createFile(String fileName) async {
+    Directory directory = await getApplicationDocumentsDirectory();
+    String savedObjectsPath = '${directory.path}/received_files';
+
+    if (!await Directory(savedObjectsPath).exists()) {
+      await Directory(savedObjectsPath).create(recursive: true);
+    }
+
+    String filePath = '$savedObjectsPath/$fileName';
+
+    File file = File(filePath);
+    await file.create();
+
+    return filePath;
+  }
+
+  Future<bool> _writeObjToFile(String objContent, String filePath) async {
+    try {
+      File file = File(filePath);
+      IOSink sink = file.openWrite();
+
+      sink.write(objContent);
+
+      await sink.flush();
+      await sink.close();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> _isObjectPathValid(String filePath) async {
     try {
       File file = File(filePath);
       return await file.exists();

@@ -52,4 +52,14 @@ class ButtonStyles {
         },
         child: const SizedBox());
   }
+
+  Widget iconButton(Icon icon, VoidCallback onPressed) {
+    return IconButton(
+      onPressed: () {
+        onPressed();
+      },
+      icon: icon,
+      iconSize: 32,
+    );
+  }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'socket_service.dart'; // Make sure to import your SocketService file
 
 enum HardwareStatus {
   scanning,
+  receiving,
   scanningOtherDevice,
   idle,
 }
@@ -18,6 +18,16 @@ class ScanProvider extends ChangeNotifier {
 
   void startScan() {
     _status = HardwareStatus.scanning;
+    notifyListeners();
+  }
+
+  void startReceiving() {
+    _status = HardwareStatus.receiving;
+    notifyListeners();
+  }
+
+  void finishReceiving() {
+    _status = HardwareStatus.idle;
     notifyListeners();
   }
 

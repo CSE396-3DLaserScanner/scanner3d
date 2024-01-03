@@ -5,6 +5,7 @@ import 'package:Scanner3D/src/presentation/icons/scanner_icons.dart';
 import 'package:Scanner3D/src/presentation/pages/connection_page.dart';
 import 'package:Scanner3D/src/presentation/pages/current_scan_page.dart';
 import 'package:Scanner3D/src/presentation/pages/scan_list_page.dart';
+import 'dart:developer' as developer;
 import 'package:Scanner3D/src/presentation/pages/splash_view_page.dart';
 import 'package:Scanner3D/src/presentation/widgets/connection_status_app_bar.dart';
 import 'package:Scanner3D/src/services/notification_service.dart';
@@ -56,7 +57,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   int _selectedIndex = 0;
 
   final List<Widget> _pageOptions = <Widget>[
@@ -69,6 +70,33 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    SocketService.instance.disconnectSockets();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Uygulama arka plana geçtiğinde
+      // Burada yapmak istediğiniz işlemi ekleyebilirsiniz.
+      developer.log("Uygulama arka plana geçti.");
+    } else if (state == AppLifecycleState.resumed) {
+      // Uygulama tekrar aktifleştiğinde
+      developer.log("Uygulama tekrar aktifleşti.");
+    } else if (state == AppLifecycleState.inactive) {
+      developer.log("Kapandı");
+    }
   }
 
   @override

@@ -135,26 +135,9 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
             Expanded(
               flex: 10,
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "You are almost done! We are scanning your object.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Theme.of(context).highlightColor,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    CircularProgressIndicator(
-                        strokeWidth: 5.0,
-                        color: Theme.of(context).primaryColor),
-                    const SizedBox(height: 20),
-                    Text(
-                        "%${(SocketService.instance.currentRound / SocketService.instance.totalRound) * 100}"),
-                  ],
-                ),
+                child: (scanProvider.status == HardwareStatus.scanning)
+                    ? _buildScanningInfoScreen()
+                    : _buildReceivingInfoScreen(),
               ),
             ),
             (scanProvider.status == HardwareStatus.scanning)
@@ -171,6 +154,57 @@ class _CurrentScanPageState extends State<CurrentScanPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildScanningInfoScreen() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "You are almost done!\nWe are scanning your object.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            color: Theme.of(context).highlightColor,
+          ),
+        ),
+        const SizedBox(height: 40),
+        CircularProgressIndicator(
+            strokeWidth: 5.0,
+            value: (SocketService.instance.currentRound /
+                SocketService.instance.totalRound),
+            color: Theme.of(context).primaryColor),
+        const SizedBox(height: 20),
+        Text(
+            "%${((SocketService.instance.currentRound / SocketService.instance.totalRound) * 100).toInt()}"),
+      ],
+    );
+  }
+
+  Widget _buildReceivingInfoScreen() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "You are almost done!\nWe are receiving your object from device.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            color: Theme.of(context).highlightColor,
+          ),
+        ),
+        const SizedBox(height: 40),
+        CircularProgressIndicator(
+            strokeWidth: 5.0,
+            value: ((SocketService.instance.totalFileSize -
+                    SocketService.instance.fileSize) /
+                SocketService.instance.totalFileSize),
+            color: Theme.of(context).primaryColor),
+        const SizedBox(height: 20),
+        Text(
+            "%${(((SocketService.instance.totalFileSize - SocketService.instance.fileSize) / SocketService.instance.totalFileSize) * 100).toInt()}"),
+      ],
     );
   }
 

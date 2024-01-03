@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:Scanner3D/main.dart';
 import 'package:Scanner3D/src/services/scan_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SocketService extends ChangeNotifier {
   late Socket _serverSocket;
@@ -23,24 +21,26 @@ class SocketService extends ChangeNotifier {
   final int _imagePort = 3003;
   final int _livePort = 3004;
 
-  int _fileSize = 0;
   StringBuffer stringBuffer = StringBuffer();
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
-
-  bool _isReceived = false;
-  bool get isReceived => _isReceived;
 
   SocketService._private();
   static final SocketService _instance = SocketService._private();
   static SocketService get instance => _instance;
 
   int _currentRound = 0;
-  int _totalRound = 0;
+  int _totalRound = 1;
+  int _fileSize = 0;
+  int _totalFileSize = 1;
+  int _receivedFileSize = 0;
 
   int get currentRound => _currentRound;
   int get totalRound => _totalRound;
+  int get fileSize => _fileSize;
+  int get totalFileSize => _totalFileSize;
+  int get receivedFileSize => _receivedFileSize;
 
   void connectSocket(String ipAddress) async {
     bool flag = true;
@@ -50,16 +50,9 @@ class SocketService extends ChangeNotifier {
       _serverSocket = await Socket.connect(_ipAddress, _serverPort);
 
       _serverSocket.listen(
-        (List<int> data) {
-          String receivedData = utf8.decode(data);
-
-          developer.log('Server socket received data: $receivedData');
-        },
+        (List<int> data) {},
         onDone: () {
           disconnectSockets();
-          _isConnected = false;
-          notifyListeners();
-
           developer.log('Server socket closed');
         },
         onError: (error) {
@@ -76,16 +69,9 @@ class SocketService extends ChangeNotifier {
         _configSocket = await Socket.connect(_ipAddress, _configPort);
 
         _configSocket.listen(
-          (List<int> data) {
-            String receivedData = utf8.decode(data);
-
-            developer.log('Config socket received data: $receivedData');
-          },
+          (List<int> data) {},
           onDone: () {
             disconnectSockets();
-            _isConnected = false;
-            notifyListeners();
-
             developer.log('Config socket closed');
           },
           onError: (error) {
@@ -103,7 +89,7 @@ class SocketService extends ChangeNotifier {
         _broadcastSocket = await Socket.connect(_ipAddress, _broadcastPort);
 
         _broadcastSocket.listen(
-          (List<int> data) {
+          (List<int> data) async {
             String receivedData = utf8.decode(data);
 
             if (receivedData == "scanner_state RUNNING") {
@@ -119,9 +105,6 @@ class SocketService extends ChangeNotifier {
           },
           onDone: () {
             disconnectSockets();
-            _isConnected = false;
-            notifyListeners();
-
             developer.log('Broadcast socket closed');
           },
           onError: (error) {
@@ -139,16 +122,9 @@ class SocketService extends ChangeNotifier {
         _imageSocket = await Socket.connect(_ipAddress, _imagePort);
 
         _imageSocket.listen(
-          (List<int> data) {
-            String receivedData = utf8.decode(data);
-
-            developer.log('Image socket received data: $receivedData');
-          },
+          (List<int> data) {},
           onDone: () {
             disconnectSockets();
-            _isConnected = false;
-            notifyListeners();
-
             developer.log('Image socket closed');
           },
           onError: (error) {
@@ -167,9 +143,9 @@ class SocketService extends ChangeNotifier {
         _liveSocket.listen(
           (List<int> data) async {
             String receivedData = utf8.decode(data);
-
+            developer.log(receivedData);
             if (receivedData == "START_SCANNING") {
-              _liveSocket.write(receivedData);
+              _liveSocket.write("ack");
             }
 
             if (receivedData.startsWith("ROUND")) {
@@ -186,39 +162,45 @@ class SocketService extends ChangeNotifier {
               } else {
                 developer.log("Invalid data format");
               }
-              _liveSocket.write(receivedData);
+              _liveSocket.write("ack");
             }
             if (receivedData == "FINISH_SCANNING") {
-              _liveSocket.write(receivedData);
+              _liveSocket.write("ack");
             }
-            if (receivedData == "FILE_END") {
-              _liveSocket.write(receivedData);
-              fileSize = 0;
-              // writeObjToFile(stringBuffer.toString());
+
+            if (receivedData.startsWith("FILE_END")) {
+              _fileSize = 0;
+              _totalFileSize = 1;
+              List<String> parts = receivedData.split(" ");
+              try {
+                _receivedFileSize = int.parse(parts[1]);
+              } catch (e) {
+                developer.log("Error parsing integers on FILE_END: $e");
+              }
+              notifyListeners();
+              _liveSocket.write("ack");
+            } else if (_fileSize > 0) {
+              stringBuffer.write(String.fromCharCodes(data));
+              _fileSize = _fileSize - receivedData.length;
+              notifyListeners();
+              _liveSocket.write("ack");
             } else if (receivedData.startsWith("FILE")) {
-              _totalRound = 0;
+              _totalRound = 1;
               _currentRound = 0;
               List<String> parts = receivedData.split(" ");
               try {
                 int intValue = int.parse(parts[1]);
-                fileSize = intValue;
+                _fileSize = intValue;
+                _totalFileSize = _fileSize;
+                ScanProvider.instance.startReceiving();
               } catch (e) {
-                developer.log("Error parsingh integers: $e");
+                developer.log("Error parsing integers on FILE: $e");
               }
-              _liveSocket.write(receivedData);
-            }
-
-            if (fileSize > 0) {
-              stringBuffer.write(String.fromCharCodes(data));
-              _liveSocket.write(receivedData);
-              fileSize - receivedData.length;
+              _liveSocket.write("ack");
             }
           },
           onDone: () {
             disconnectSockets();
-            _isConnected = false;
-            notifyListeners();
-
             developer.log('Live socket closed');
           },
           onError: (error) {
@@ -241,64 +223,32 @@ class SocketService extends ChangeNotifier {
     }
   }
 
-  int fileSize = 0;
-  int count = 0;
-
   void disconnectSockets() {
-    _configSocket.write("disconnect");
-    _serverSocket.close();
-    _configSocket.close();
-    _broadcastSocket.close();
-    _imageSocket.close();
-    _liveSocket.close();
+    disconnectCommand();
+    try {
+      _serverSocket.close();
+      _configSocket.close();
+      _broadcastSocket.close();
+      _imageSocket.close();
+      _liveSocket.close();
+    } catch (e) {
+      developer.log("message: $e");
+    }
     _isConnected = false;
     notifyListeners();
-  }
-
-  void writeObjToFile(String objContent) async {
-    try {
-      // Open the file in write mode.
-      File file = File(_filePath);
-      IOSink sink = file.openWrite();
-
-      // Write the content to the file.
-      sink.write(objContent);
-
-      // Close the file.
-      await sink.flush().then((value) => sink.close().then((value) {
-            SocketService.instance._isReceived = true;
-            notifyListeners();
-          }));
-    } catch (e) {
-      developer.log('Error writing to file: $e');
-    }
   }
 
   void startScanCommand() {
     _configSocket.write("command start");
   }
 
+  void disconnectCommand() {
+    _configSocket.write("command disconnect");
+  }
+
   void cancelScanCommand() {
     _configSocket.write("command cancel");
   }
-
-  void createFile() async {
-    Directory directory = await getApplicationDocumentsDirectory();
-    String savedObjectsPath = '${directory.path}/received_files';
-
-    if (!await Directory(savedObjectsPath).exists()) {
-      await Directory(savedObjectsPath).create(recursive: true);
-    }
-
-    _filePath = '$savedObjectsPath/file.obj';
-
-    File file = File(_filePath);
-    await file.create();
-
-    developer.log("name: ${file.path}");
-  }
-
-  String _filePath = "";
 
   void showCustomToast(BuildContext context, String message) {
     final scaffold = ScaffoldMessenger.of(context);

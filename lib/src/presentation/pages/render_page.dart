@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'package:Scanner3D/main.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_cube/flutter_cube.dart';
 // ignore: unused_import
 import 'dart:developer' as developer;
 import 'package:Scanner3D/src/presentation/widgets/button_style.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RenderPage extends StatefulWidget {
   const RenderPage(
@@ -22,7 +23,6 @@ class RenderPage extends StatefulWidget {
 }
 
 class _RenderPageState extends State<RenderPage> {
-  late String _filePath;
   late bool _isObjectValid;
   late Key _cubeKey;
 
@@ -30,15 +30,12 @@ class _RenderPageState extends State<RenderPage> {
   Color _objectColor = Colors.white;
   Color _selectedColor = Colors.white;
   BlendMode _blendMode = BlendMode.color;
-
   bool _isReset = false;
-  bool _isLoading = false;
 
   @override
   initState() {
     super.initState();
 
-    _filePath = widget.path;
     _isObjectValid = false;
     _checkObjectValidity();
     _cubeKey = UniqueKey();
@@ -50,6 +47,21 @@ class _RenderPageState extends State<RenderPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.objectFileName),
+        actions: [
+          _isObjectValid
+              ? ButtonStyles().iconButton(
+                  const Icon(Icons.download_for_offline_outlined),
+                  () {
+                    FileStorage.writeCounter(
+                        widget.objectFileName, widget.path);
+
+                    showCustomToast(navigatorKey.currentContext!,
+                        "${widget.objectFileName} is saved to /Download/Scanner3D");
+                  },
+                )
+              : const SizedBox(),
+          const SizedBox(width: 10),
+        ],
         centerTitle: true,
       ),
       body: Container(
@@ -63,17 +75,12 @@ class _RenderPageState extends State<RenderPage> {
       children: [
         SizedBox(
             height: MediaQuery.of(context).size.height * 0.75,
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : Cube(
-                    key: _cubeKey,
-                    onSceneCreated: (Scene scene) {
-                      _onSceneCreated(scene);
-                      setState(() {});
-                    },
-                  )),
+            child: Cube(
+              key: _cubeKey,
+              onSceneCreated: (Scene scene) {
+                _onSceneCreated(scene);
+              },
+            )),
         const SizedBox(height: 20),
         _buildButtonTab()
       ],
@@ -98,11 +105,12 @@ class _RenderPageState extends State<RenderPage> {
       scene.updateTexture();
     } else {
       Object object = Object(
-        fileName: _filePath,
+        isAsset: false,
+        fileName: widget.path,
         lighting: true,
         backfaceCulling: false,
         scale: Vector3(10, 10, 10),
-        position: Vector3(0, 1, 2),
+        position: Vector3(0, 2, 5),
         rotation: Vector3(90, -45, 180),
       );
       _object = object;
@@ -119,15 +127,21 @@ class _RenderPageState extends State<RenderPage> {
       });
       _objectColor = _selectedColor;
     }
-
+    developer.log(_object.mesh.vertices.length.toString());
     scene.world.add(_object);
-    scene.camera = Camera(far: 1500, zoom: 0.7);
+    scene.light.position.setFrom(Vector3(0, 0, 100));
+    scene.camera = Camera();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Widget _buildButtonTab() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         ButtonStyles().button("Reset Position", () {
           _isReset = true;
@@ -214,9 +228,9 @@ class _RenderPageState extends State<RenderPage> {
     return filePath;
   }
 
-  /*Future<void> _checkObjectValidity() async {
+  Future<void> _checkObjectValidity() async {
     try {
-      if (await File(_filePath).exists()) {
+      if (await File(widget.path).exists()) {
         setState(() {
           _isObjectValid = true;
         });
@@ -230,17 +244,59 @@ class _RenderPageState extends State<RenderPage> {
         _isObjectValid = false;
       });
     }
-  }*/
-  Future<void> _checkObjectValidity() async {
-    try {
-      await rootBundle.load(widget.path);
-      setState(() {
-        _isObjectValid = true;
-      });
-    } catch (e) {
-      setState(() {
-        _isObjectValid = false;
-      });
-    }
   }
+}
+
+// To save the file in the device
+class FileStorage {
+  static Future<String> getExternalDocumentPath() async {
+    // To check whether permission is given for this app or not.
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      // If not we will ask for permission first
+      await Permission.storage.request();
+    }
+    Directory _directory = Directory("");
+    if (Platform.isAndroid) {
+      // Redirects it to download folder in android
+      _directory = Directory("/storage/emulated/0/Download/Scanner3D");
+    } else {
+      _directory = await getApplicationDocumentsDirectory();
+    }
+
+    final exPath = _directory.path;
+    await Directory(exPath).create(recursive: true);
+    return exPath;
+  }
+
+  static Future<String> get _localPath async {
+    // final directory = await getApplicationDocumentsDirectory();
+    // return directory.path;
+    // To get the external path from device of download folder
+    final String directory = await getExternalDocumentPath();
+    return directory;
+  }
+
+  static Future<File> writeCounter(String name, String filePath) async {
+    List<int> bytes = await File(filePath).readAsBytes();
+
+    final path = await _localPath;
+    // Create a file for the path of
+    // device and file name with extension
+    File file = File('$path/$name');
+
+    // Write the data in the file you have created
+    return file.writeAsBytes(bytes);
+  }
+}
+
+void showCustomToast(BuildContext context, String message) {
+  final scaffold = ScaffoldMessenger.of(context);
+  scaffold.showSnackBar(
+    SnackBar(
+      content: Text(message, textAlign: TextAlign.center),
+      duration: const Duration(seconds: 3),
+      backgroundColor: Theme.of(context).primaryColor,
+    ),
+  );
 }

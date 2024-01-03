@@ -2,12 +2,14 @@ class FileData {
   int? id;
 
   String fileName;
+  String filePath;
   bool isSuccessful;
   int percentage;
 
   FileData({
     this.id,
     required this.fileName,
+    required this.filePath,
     required this.isSuccessful,
     required this.percentage,
   });
@@ -16,6 +18,7 @@ class FileData {
     return {
       'id': id,
       'fileName': fileName,
+      'filePath': filePath,
       'isSuccessful': isSuccessful ? 1 : 0,
       'percentage': percentage,
     };
@@ -25,6 +28,7 @@ class FileData {
     return FileData(
       id: map['id'],
       fileName: map['fileName'],
+      filePath: map['filePath'],
       isSuccessful: map['isSuccessful'] == 1,
       percentage: map['percentage'],
     );

@@ -27,7 +27,8 @@ class DatabaseHelper {
     await db.execute('''
     CREATE TABLE file_data (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      fileName TEXT,
+      fileName TEXT, 
+      filePath TEXT, 
       isSuccessful INTEGER,
       percentage INTEGER
     )

@@ -18,11 +18,14 @@ dependencies:
   socket_io_client: ^2.0.3+1
   provider: ^6.1.1
   flutter_cube: ^0.1.1
+  flutter_3d_viewer: ^1.0.0
+  object_3d: ^0.0.1
   flutter_local_notifications: ^16.2.0
   sqflite: ^2.0.0
   path: ^1.8.3
   ffi: ^2.1.0
   flex_color_picker: ^3.3.0
+  permission_handler: ^11.1.0
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +41,5 @@ flutter:
 
   assets:
     - assets/animations/
-    - assets/fonts/ 
-    - saved_objects/
-    - saved_objects/textures/
+    - assets/fonts/
+    - assets/
