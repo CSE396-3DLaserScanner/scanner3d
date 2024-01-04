@@ -30,66 +30,54 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
     return Scaffold(
         backgroundColor: Colors.white,
         body: Container(
-          padding: const EdgeInsets.all(50),
-          alignment: Alignment.center,
-          child: Consumer<SocketService>(builder: (context, socketService, _) {
-            return _buildFileNameInput();
-          }),
-        ));
+            padding: const EdgeInsets.all(50),
+            alignment: Alignment.center,
+            child:
+                Consumer<SocketService>(builder: (context, socketService, _) {
+              return _buildFileNameInput();
+            })));
   }
 
   Widget _buildFileNameInput() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text("Enter File Name",
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 20)),
-        const SizedBox(height: 20),
-        Form(
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text("Enter File Name",
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 20)),
+      const SizedBox(height: 20),
+      Form(
           key: formKey,
           child: TextFormField(
               cursorColor: Theme.of(context).primaryColor,
               controller: fileNameController,
               decoration: InputDecoration(
-                focusedBorder: getBorder(Theme.of(context).primaryColor),
-                enabledBorder: getBorder(Theme.of(context).shadowColor),
-                focusedErrorBorder: getBorder(Theme.of(context).disabledColor),
-                errorBorder: getBorder(Theme.of(context).disabledColor),
-                hintText: 'File Name',
-              ),
+                  focusedBorder: getBorder(Theme.of(context).primaryColor),
+                  enabledBorder: getBorder(Theme.of(context).shadowColor),
+                  focusedErrorBorder:
+                      getBorder(Theme.of(context).disabledColor),
+                  errorBorder: getBorder(Theme.of(context).disabledColor),
+                  hintText: 'File Name'),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter a file name';
                 }
                 return null;
-              }),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ButtonStyles().textButton("Cancel", () {
-              Navigator.of(context).pop();
-            }, Theme.of(context).disabledColor),
-            ButtonStyles().textButton("OK", () {
-              if (formKey.currentState!.validate()) {
-                saveAndNavigate("${fileNameController.text}.obj", 100);
-                fileNameController.text.trim();
-              }
-            }, Theme.of(context).primaryColor),
-          ],
-        ),
-      ],
-    );
+              })),
+      const SizedBox(height: 10),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        ButtonStyles().textButton("Cancel", () {
+          Navigator.of(context).pop();
+        }, Theme.of(context).disabledColor),
+        ButtonStyles().textButton("OK", () {
+          if (formKey.currentState!.validate()) {
+            saveAndNavigate("${fileNameController.text}.obj", 100);
+            fileNameController.text.trim();
+          }
+        }, Theme.of(context).primaryColor)
+      ])
+    ]);
   }
 
   OutlineInputBorder getBorder(Color color) {
-    return OutlineInputBorder(
-      borderSide: BorderSide(
-        color: color,
-        width: 1.0,
-      ),
-    );
+    return OutlineInputBorder(borderSide: BorderSide(color: color, width: 1.0));
   }
 
   Future<void> saveAndNavigate(String fileName, int percentage) async {
@@ -106,30 +94,24 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
 
     if (isObjectValid) {
       await dbHelper.insertFileData(FileData(
-        fileName: fileName,
-        filePath: filePath,
-        isSuccessful: percentage == 100,
-        percentage: percentage,
-      ));
+          fileName: fileName,
+          filePath: filePath,
+          isSuccessful: percentage == 100,
+          percentage: percentage));
     } else {
       percentage = 0;
       await dbHelper.insertFileData(FileData(
-        fileName: fileName,
-        filePath: filePath,
-        isSuccessful: percentage == 100,
-        percentage: percentage,
-      ));
+          fileName: fileName,
+          filePath: filePath,
+          isSuccessful: percentage == 100,
+          percentage: percentage));
     }
 
     Navigator.pushReplacement(
-      navigatorKey.currentContext!,
-      MaterialPageRoute(
-        builder: (context) => RenderPage(
-          objectFileName: fileName,
-          path: filePath,
-        ),
-      ),
-    );
+        navigatorKey.currentContext!,
+        MaterialPageRoute(
+            builder: (context) =>
+                RenderPage(objectFileName: fileName, path: filePath)));
   }
 
   Future<String> _createFile(String fileName) async {
@@ -141,10 +123,8 @@ class _ReceiveScannedObjectPageState extends State<ReceiveScannedObjectPage> {
     }
 
     String filePath = '$savedObjectsPath/$fileName';
-
     File file = File(filePath);
     await file.create();
-
     return filePath;
   }
 

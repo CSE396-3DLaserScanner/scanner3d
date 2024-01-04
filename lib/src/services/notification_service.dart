@@ -22,13 +22,10 @@ class NotificationService {
     required FlutterLocalNotificationsPlugin fln,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'your_channel_id',
-      'Your Channel Name',
-      playSound: true,
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+        AndroidNotificationDetails('your_channel_id', 'Your Channel Name',
+            playSound: true,
+            importance: Importance.max,
+            priority: Priority.high);
 
     const NotificationDetails notificationDetails =
         NotificationDetails(android: androidPlatformChannelSpecifics);

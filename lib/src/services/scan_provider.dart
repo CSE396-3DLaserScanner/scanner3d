@@ -39,6 +39,8 @@ class ScanProvider extends ChangeNotifier {
   void finishScan() {
     if (onScanCompleted != null) {
       onScanCompleted!();
+    } else {
+      onScanCompleted = () {};
     }
     _status = HardwareStatus.idle;
     notifyListeners();

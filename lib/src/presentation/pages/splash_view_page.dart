@@ -26,13 +26,8 @@ class _SplashViewPageState extends State<SplashViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-          child: Lottie.asset(
-        'assets/animations/animation_splash.json',
-        width: double.infinity,
-        height: 350,
-        fit: BoxFit.contain,
-      )),
-    );
+        body: Center(
+            child: Lottie.asset('assets/animations/animation_splash.json',
+                width: double.infinity, height: 350, fit: BoxFit.contain)));
   }
 }

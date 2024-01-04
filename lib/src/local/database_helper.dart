@@ -1,10 +1,9 @@
 import 'dart:io';
-
+import 'package:Scanner3D/src/model/file_data.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-
-import 'package:Scanner3D/src/model/file_data.dart';
+import 'package:path/path.dart' as path;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -37,6 +36,29 @@ class DatabaseHelper {
 
   Future<int> insertFileData(FileData fileData) async {
     Database db = await instance.database;
+
+    String baseFileName = path.basenameWithoutExtension(fileData.fileName);
+    String fileExtension = path.extension(fileData.fileName);
+
+    List<Map<String, dynamic>> existingFiles = await db.query(
+      'file_data',
+      where: 'fileName = ?',
+      whereArgs: [fileData.fileName],
+    );
+
+    String uniqueFileName = fileData.fileName;
+    int counter = 1;
+    while (existingFiles.isNotEmpty) {
+      uniqueFileName = "${baseFileName}_$counter$fileExtension";
+      existingFiles = await db.query(
+        'file_data',
+        where: 'fileName = ?',
+        whereArgs: [uniqueFileName],
+      );
+      counter++;
+    }
+    fileData.fileName = uniqueFileName;
+
     int id = await db.insert('file_data', fileData.toMap());
     return id;
   }

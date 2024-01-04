@@ -19,18 +19,15 @@ class _ConnectionPageState extends State<ConnectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-        child: Consumer<SocketService>(
-          builder: (context, socketService, _) {
-            return socketService.isConnected
-                ? _buildConnectionInfoScreen()
-                : _buildConnectScreen();
-          },
-        ),
-      ),
-    );
+        body: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+            child:
+                Consumer<SocketService>(builder: (context, socketService, _) {
+              return socketService.isConnected
+                  ? _buildConnectionInfoScreen()
+                  : _buildConnectScreen();
+            })));
   }
 
   @override
@@ -40,110 +37,81 @@ class _ConnectionPageState extends State<ConnectionPage> {
   }
 
   Widget _buildConnectScreen() {
-    return Column(
-      children: [
-        Expanded(
-          flex: 10,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Connect to Device",
-                style: TextStyle(
-                    fontSize: 24, color: Theme.of(context).shadowColor),
-              ),
-              const SizedBox(height: 20),
-              Form(
-                key: _formKey,
-                child: TextFormField(
-                    cursorColor: Theme.of(context).primaryColor,
-                    controller: _ipController,
-                    decoration: InputDecoration(
-                        focusedBorder:
-                            getBorder(Theme.of(context).primaryColor),
-                        enabledBorder: getBorder(Theme.of(context).shadowColor),
-                        focusedErrorBorder:
-                            getBorder(Theme.of(context).disabledColor),
-                        errorBorder: getBorder(Theme.of(context).disabledColor),
-                        labelText: 'Enter Server IP',
-                        labelStyle:
-                            TextStyle(color: Theme.of(context).shadowColor),
-                        hintText: "127.0.0.1"),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter the server IP';
-                      }
-                      if (!isValidIpAddress(value)) {
-                        return 'Invalid IP address format';
-                      }
-                      return null;
-                    }),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
+    return Column(children: [
+      Expanded(
+        flex: 10,
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text("Connect to Device",
+              style: TextStyle(
+                  fontSize: 24, color: Theme.of(context).shadowColor)),
+          const SizedBox(height: 20),
+          Form(
+              key: _formKey,
+              child: TextFormField(
+                  cursorColor: Theme.of(context).primaryColor,
+                  controller: _ipController,
+                  decoration: InputDecoration(
+                      focusedBorder: getBorder(Theme.of(context).primaryColor),
+                      enabledBorder: getBorder(Theme.of(context).shadowColor),
+                      focusedErrorBorder:
+                          getBorder(Theme.of(context).disabledColor),
+                      errorBorder: getBorder(Theme.of(context).disabledColor),
+                      labelText: 'Enter Server IP',
+                      labelStyle:
+                          TextStyle(color: Theme.of(context).shadowColor),
+                      hintText: "127.0.0.1"),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the server IP';
+                    }
+                    if (!isValidIpAddress(value)) {
+                      return 'Invalid IP address format';
+                    }
+                    return null;
+                  }))
+        ]),
+      ),
+      Expanded(
           flex: 0,
-          child: ButtonStyles().button(
-            "Connect",
-            () {
-              if (_formKey.currentState!.validate()) {
-                SocketService.instance.connectSocket(_ipController.text);
-              }
-            },
-            Theme.of(context).primaryColor,
-          ),
-        ),
-      ],
-    );
+          child: ButtonStyles().button("Connect", () {
+            if (_formKey.currentState!.validate()) {
+              SocketService.instance.connectSocket(_ipController.text);
+            }
+          }, Theme.of(context).primaryColor))
+    ]);
   }
 
   Widget _buildConnectionInfoScreen() {
-    return Column(
-      children: [
-        Expanded(
-          flex: 10,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Hardware IP Address:",
-                style: TextStyle(
-                    fontSize: 24, color: Theme.of(context).shadowColor),
+    return Column(children: [
+      Expanded(
+        flex: 10,
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text("Hardware IP Address:",
+              style: TextStyle(
+                  fontSize: 24, color: Theme.of(context).shadowColor)),
+          const SizedBox(height: 20),
+          Consumer<SocketService>(builder: (context, socketService, _) {
+            return Text(
+              socketService.ipAddress,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 20),
-              Consumer<SocketService>(builder: (context, socketService, _) {
-                return Text(
-                  socketService.ipAddress,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                );
-              })
-            ],
-          ),
-        ),
-        Expanded(
+            );
+          })
+        ]),
+      ),
+      Expanded(
           flex: 0,
-          child: ButtonStyles().button(
-            "Disconnect",
-            () {
-              SocketService.instance.disconnectSockets();
-            },
-            Theme.of(context).disabledColor,
-          ),
-        ),
-      ],
-    );
+          child: ButtonStyles().button("Disconnect", () {
+            SocketService.instance.disconnectSockets();
+          }, Theme.of(context).disabledColor))
+    ]);
   }
 
   OutlineInputBorder getBorder(Color color) {
     return OutlineInputBorder(
-      borderSide: BorderSide(
-        color: color,
-        width: 1.0,
-      ),
+      borderSide: BorderSide(color: color, width: 1.0),
     );
   }
 

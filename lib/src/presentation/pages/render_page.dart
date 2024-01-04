@@ -4,8 +4,6 @@ import 'dart:ui';
 import 'package:Scanner3D/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cube/flutter_cube.dart';
-// ignore: unused_import
-import 'dart:developer' as developer;
 import 'package:Scanner3D/src/presentation/widgets/button_style.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -45,58 +43,47 @@ class _RenderPageState extends State<RenderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.objectFileName),
-        actions: [
-          _isObjectValid
-              ? ButtonStyles().iconButton(
-                  const Icon(Icons.download_for_offline_outlined),
-                  () {
-                    FileStorage.writeCounter(
-                        widget.objectFileName, widget.path);
+        appBar: AppBar(
+            title: Text(widget.objectFileName),
+            actions: [
+              _isObjectValid
+                  ? ButtonStyles()
+                      .iconButton(const Icon(Icons.download_rounded), () {
+                      FileStorage.writeCounter(
+                          widget.objectFileName, widget.path);
 
-                    showCustomToast(navigatorKey.currentContext!,
-                        "${widget.objectFileName} is saved to /Download/Scanner3D");
-                  },
-                )
-              : const SizedBox(),
-          const SizedBox(width: 10),
-        ],
-        centerTitle: true,
-      ),
-      body: Container(
-        child: _isObjectValid ? _buildValidScreen() : _buildInvalidScreen(),
-      ),
-    );
+                      showCustomToast(navigatorKey.currentContext!,
+                          "${widget.objectFileName} is saved to /Download/Scanner3D");
+                    })
+                  : const SizedBox(),
+              const SizedBox(width: 10)
+            ],
+            centerTitle: true),
+        body: Container(
+            child:
+                _isObjectValid ? _buildValidScreen() : _buildInvalidScreen()));
   }
 
   Widget _buildValidScreen() {
-    return Column(
-      children: [
-        SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
-            child: Cube(
-              key: _cubeKey,
-              onSceneCreated: (Scene scene) {
-                _onSceneCreated(scene);
-              },
-            )),
-        const SizedBox(height: 20),
-        _buildButtonTab()
-      ],
-    );
+    return Column(children: [
+      SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: Cube(
+            key: _cubeKey,
+            onSceneCreated: (Scene scene) {
+              _onSceneCreated(scene);
+            },
+          )),
+      const SizedBox(height: 20),
+      _buildButtonTab()
+    ]);
   }
 
   Widget _buildInvalidScreen() {
     return Center(
-      child: Text(
-        "File '${widget.objectFileName}' could not be found!",
-        style: TextStyle(
-          color: Theme.of(context).shadowColor,
-          fontSize: 20,
-        ),
-      ),
-    );
+        child: Text("File '${widget.objectFileName}' could not be found!",
+            style:
+                TextStyle(color: Theme.of(context).shadowColor, fontSize: 20)));
   }
 
   void _onSceneCreated(Scene scene) {
@@ -105,14 +92,13 @@ class _RenderPageState extends State<RenderPage> {
       scene.updateTexture();
     } else {
       Object object = Object(
-        isAsset: false,
-        fileName: widget.path,
-        lighting: true,
-        backfaceCulling: false,
-        scale: Vector3(10, 10, 10),
-        position: Vector3(0, 2, 5),
-        rotation: Vector3(90, -45, 180),
-      );
+          isAsset: false,
+          fileName: widget.path,
+          lighting: true,
+          backfaceCulling: false,
+          scale: Vector3(10, 10, 10),
+          position: Vector3(0, 2, 5),
+          rotation: Vector3(90, -45, 180));
       _object = object;
     }
 
@@ -120,37 +106,29 @@ class _RenderPageState extends State<RenderPage> {
       _createAndSaveTextureImage().then((value) {
         loadImageFromAsset(value, isAsset: false).then((image) {
           _object.mesh.texture = image;
-
           scene.textureBlendMode = _blendMode;
           scene.updateTexture();
         });
       });
       _objectColor = _selectedColor;
     }
-    developer.log(_object.mesh.vertices.length.toString());
     scene.world.add(_object);
-    scene.light.position.setFrom(Vector3(0, 0, 100));
+    scene.light.position.setFrom(Vector3(0, 0, 0));
     scene.camera = Camera();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Widget _buildButtonTab() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        ButtonStyles().button("Reset Position", () {
-          _isReset = true;
-          setState(() {
-            _cubeKey = UniqueKey();
-          });
-        }, Theme.of(context).primaryColor),
-        Row(
-          children: [
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ButtonStyles().button("Reset Position", () {
+            _isReset = true;
+            setState(() {
+              _cubeKey = UniqueKey();
+            });
+          }, Theme.of(context).primaryColor),
+          Row(children: [
             IconButton(
                 onPressed: () {
                   _isReset = true;
@@ -165,18 +143,14 @@ class _RenderPageState extends State<RenderPage> {
                     ? Icons.color_lens_outlined
                     : Icons.color_lens)),
             _buildColorPicker()
-          ],
-        ),
-      ],
-    );
+          ])
+        ]);
   }
 
   Widget _buildColorPicker() {
-    return ButtonStyles().colorButton(
-      _selectedColor,
-      () {
-        _isReset = true;
-        ColorPicker(
+    return ButtonStyles().colorButton(_selectedColor, () {
+      _isReset = true;
+      ColorPicker(
           color: _selectedColor,
           onColorChanged: (Color color) {
             setState(() {
@@ -192,14 +166,9 @@ class _RenderPageState extends State<RenderPage> {
           enableTonalPalette: true,
           pickersEnabled: const <ColorPickerType, bool>{
             ColorPickerType.primary: true,
-            ColorPickerType.accent: false,
-          },
-        ).showPickerDialog(
-          context,
-          backgroundColor: Colors.white,
-        );
-      },
-    );
+            ColorPickerType.accent: false
+          }).showPickerDialog(context, backgroundColor: Colors.white);
+    });
   }
 
   Future<String> _createAndSaveTextureImage() async {
@@ -247,32 +216,25 @@ class _RenderPageState extends State<RenderPage> {
   }
 }
 
-// To save the file in the device
 class FileStorage {
   static Future<String> getExternalDocumentPath() async {
-    // To check whether permission is given for this app or not.
     var status = await Permission.storage.status;
     if (!status.isGranted) {
-      // If not we will ask for permission first
       await Permission.storage.request();
     }
-    Directory _directory = Directory("");
+    Directory directory = Directory("");
     if (Platform.isAndroid) {
-      // Redirects it to download folder in android
-      _directory = Directory("/storage/emulated/0/Download/Scanner3D");
+      directory = Directory("/storage/emulated/0/Download/Scanner3D");
     } else {
-      _directory = await getApplicationDocumentsDirectory();
+      directory = await getApplicationDocumentsDirectory();
     }
 
-    final exPath = _directory.path;
+    final exPath = directory.path;
     await Directory(exPath).create(recursive: true);
     return exPath;
   }
 
   static Future<String> get _localPath async {
-    // final directory = await getApplicationDocumentsDirectory();
-    // return directory.path;
-    // To get the external path from device of download folder
     final String directory = await getExternalDocumentPath();
     return directory;
   }
@@ -281,22 +243,17 @@ class FileStorage {
     List<int> bytes = await File(filePath).readAsBytes();
 
     final path = await _localPath;
-    // Create a file for the path of
-    // device and file name with extension
     File file = File('$path/$name');
 
-    // Write the data in the file you have created
     return file.writeAsBytes(bytes);
   }
 }
 
 void showCustomToast(BuildContext context, String message) {
   final scaffold = ScaffoldMessenger.of(context);
-  scaffold.showSnackBar(
-    SnackBar(
-      content: Text(message, textAlign: TextAlign.center),
-      duration: const Duration(seconds: 3),
-      backgroundColor: Theme.of(context).primaryColor,
-    ),
-  );
+  scaffold.showSnackBar(SnackBar(
+    content: Text(message, textAlign: TextAlign.center),
+    duration: const Duration(seconds: 3),
+    backgroundColor: Theme.of(context).primaryColor,
+  ));
 }

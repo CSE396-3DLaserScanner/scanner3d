@@ -11,19 +11,14 @@ class ConnectionStatusAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SocketService>(
-      builder: (context, socketService, _) {
-        return AppBar(
+    return Consumer<SocketService>(builder: (context, socketService, _) {
+      return AppBar(
           backgroundColor: socketService.isConnected
               ? Theme.of(context).primaryColor
               : Theme.of(context).disabledColor,
-          title: Text(
-            socketService.isConnected ? "Connected" : "No connection",
-            style: const TextStyle(color: Colors.white),
-          ),
-          centerTitle: true,
-        );
-      },
-    );
+          title: Text(socketService.isConnected ? "Connected" : "No connection",
+              style: const TextStyle(color: Colors.white)),
+          centerTitle: true);
+    });
   }
 }
